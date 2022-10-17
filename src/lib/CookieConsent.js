@@ -27,6 +27,7 @@ export default class CookieConsent {
 
     UI.buildInterface(() => {
       UI.addEventListeners();
+      UI.autoOpenModal();
     });
   }
 

@@ -20,6 +20,7 @@ export default class Configuration {
       cookieExists: false,
       cookieVersion: 1,
       modalMainTextMoreLink: null,
+      modalAutoOpen: true,
       showRejectAllButton: false,
       barTimeout: 1000,
       theme: {
@@ -79,7 +80,10 @@ export default class Configuration {
         }
       },
       categories: {},
-      services: {}
+      services: {},
+      events: {
+        confirm: () => {}
+      }
     }
 
     this.setConfiguration(configObject);

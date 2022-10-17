@@ -4,6 +4,8 @@ import Utilities from "./Utilities";
 
 export default class Interface {
 
+  modalOpen = false;
+
   constructor() {
     this.elements = {};
   }
@@ -261,10 +263,24 @@ export default class Interface {
     });
   }
 
+  openModal() {
+    this.modalOpen = true;
+    this.elements['modal'].classList.add('ccm--visible');
+    this.elements['modal'].setAttribute('aria-hidden', 'false');
+    this.elements['modal'].setAttribute('tabindex', '0');
+    this.elements['modal'].querySelector('.ccm__content').focus();
+  }
+
+  autoOpenModal(){    
+    if(window.CookieConsent.config.modalAutoOpen && !window.CookieConsent.config.cookieExists){
+      this.openModal();
+    }    
+  }
+
   addEventListeners(elements) {
 
     // Set the default state for modal
-    var modalOpen = false;
+    // var modalOpen = false;
 
     var focusTarget = document.querySelector('#cconsent-bar').nextElementSibling.nextElementSibling;
 
@@ -293,9 +309,13 @@ export default class Interface {
         this.elements['modal'].setAttribute('aria-hidden', 'true');
         this.elements['modal'].setAttribute('tabindex', '-1');
         focusTarget.focus();
-        modalOpen = false;
+        this.modalOpen = false;
 
         this.modalRedrawIcons();
+
+        if(window.CookieConsent.config.events.confirm){
+          window.CookieConsent.config.events.confirm.call(this, window.CookieConsent.config);
+        }
 
       });
     }
@@ -325,7 +345,7 @@ export default class Interface {
         this.elements['modal'].setAttribute('aria-hidden', 'true');
         this.elements['modal'].setAttribute('tabindex', '-1');
         focusTarget.focus();
-        modalOpen = false;
+        this.modalOpen = false;
 
         this.modalRedrawIcons();
 
@@ -336,11 +356,7 @@ export default class Interface {
     // If you click Cookie settings and open modal
     Array.prototype.forEach.call(document.getElementsByClassName('ccb__edit'), (edit) => {
       edit.addEventListener('click', () => {
-        modalOpen = true;
-        this.elements['modal'].classList.add('ccm--visible');
-        this.elements['modal'].setAttribute('aria-hidden', 'false');
-        this.elements['modal'].setAttribute('tabindex', '0');
-        this.elements['modal'].querySelector('.ccm__content').focus();
+        this.openModal();
       });
     });
 
@@ -410,15 +426,15 @@ export default class Interface {
       this.elements['modal'].classList.remove('ccm--visible');
       this.elements['modal'].setAttribute('aria-hidden', 'true');
       this.elements['modal'].setAttribute('tabindex', '-1');
-      modalOpen = false;
+      this.modalOpen = false;
     });
 
     document.addEventListener('keydown', (event) => {
-      if (modalOpen && (!event.keyCode || event.keyCode === 27)) {
+      if (this.modalOpen && (!event.keyCode || event.keyCode === 27)) {
         this.elements['modal'].classList.remove('ccm--visible');
         this.elements['modal'].setAttribute('aria-hidden', 'true');
         this.elements['modal'].setAttribute('tabindex', '-1');
-        modalOpen = false;
+        this.modalOpen = false;
       }
     });
 
@@ -440,11 +456,15 @@ export default class Interface {
           this.elements['bar'].setAttribute('tabindex', '-1');
           this.elements['modal'].setAttribute('tabindex', '-1');
           focusTarget.focus();
-          modalOpen = false;
+          this.modalOpen = false;
         });
       });
 
       this.writeBufferToDOM();
+
+      if(window.CookieConsent.config.events.confirm){
+        window.CookieConsent.config.events.confirm.call(this, window.CookieConsent.config);
+      }
 
     });
   }

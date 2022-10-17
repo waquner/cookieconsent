@@ -1314,6 +1314,8 @@ function Interface_defineProperties(target, props) { for (var i = 0; i < props.l
 
 function Interface_createClass(Constructor, protoProps, staticProps) { if (protoProps) Interface_defineProperties(Constructor.prototype, protoProps); if (staticProps) Interface_defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
@@ -1321,6 +1323,8 @@ function Interface_createClass(Constructor, protoProps, staticProps) { if (proto
 var Interface = /*#__PURE__*/function () {
   function Interface() {
     Interface_classCallCheck(this, Interface);
+
+    _defineProperty(this, "modalOpen", false);
 
     this.elements = {};
   }
@@ -1496,12 +1500,28 @@ var Interface = /*#__PURE__*/function () {
       });
     }
   }, {
+    key: "openModal",
+    value: function openModal() {
+      this.modalOpen = true;
+      this.elements['modal'].classList.add('ccm--visible');
+      this.elements['modal'].setAttribute('aria-hidden', 'false');
+      this.elements['modal'].setAttribute('tabindex', '0');
+      this.elements['modal'].querySelector('.ccm__content').focus();
+    }
+  }, {
+    key: "autoOpenModal",
+    value: function autoOpenModal() {
+      if (window.CookieConsent.config.modalAutoOpen && !window.CookieConsent.config.cookieExists) {
+        this.openModal();
+      }
+    }
+  }, {
     key: "addEventListeners",
     value: function addEventListeners(elements) {
       var _this = this;
 
       // Set the default state for modal
-      var modalOpen = false;
+      // var modalOpen = false;
       var focusTarget = document.querySelector('#cconsent-bar').nextElementSibling.nextElementSibling; // If you click Accept all cookies
 
       var buttonConsentGive = document.querySelectorAll('.consent-give');
@@ -1537,9 +1557,13 @@ var Interface = /*#__PURE__*/function () {
             _this.elements['modal'].setAttribute('tabindex', '-1');
 
             focusTarget.focus();
-            modalOpen = false;
+            _this.modalOpen = false;
 
             _this.modalRedrawIcons();
+
+            if (window.CookieConsent.config.events.confirm) {
+              window.CookieConsent.config.events.confirm.call(_this, window.CookieConsent.config);
+            }
           });
         } // If you click Reject all cookies
 
@@ -1583,7 +1607,7 @@ var Interface = /*#__PURE__*/function () {
             _this.elements['modal'].setAttribute('tabindex', '-1');
 
             focusTarget.focus();
-            modalOpen = false;
+            _this.modalOpen = false;
 
             _this.modalRedrawIcons();
           });
@@ -1597,15 +1621,7 @@ var Interface = /*#__PURE__*/function () {
 
       Array.prototype.forEach.call(document.getElementsByClassName('ccb__edit'), function (edit) {
         edit.addEventListener('click', function () {
-          modalOpen = true;
-
-          _this.elements['modal'].classList.add('ccm--visible');
-
-          _this.elements['modal'].setAttribute('aria-hidden', 'false');
-
-          _this.elements['modal'].setAttribute('tabindex', '0');
-
-          _this.elements['modal'].querySelector('.ccm__content').focus();
+          _this.openModal();
         });
       }); // If you click trough the tabs on Cookie settings
       // If you click on/off switch
@@ -1671,17 +1687,17 @@ var Interface = /*#__PURE__*/function () {
 
         _this.elements['modal'].setAttribute('tabindex', '-1');
 
-        modalOpen = false;
+        _this.modalOpen = false;
       });
       document.addEventListener('keydown', function (event) {
-        if (modalOpen && (!event.keyCode || event.keyCode === 27)) {
+        if (_this.modalOpen && (!event.keyCode || event.keyCode === 27)) {
           _this.elements['modal'].classList.remove('ccm--visible');
 
           _this.elements['modal'].setAttribute('aria-hidden', 'true');
 
           _this.elements['modal'].setAttribute('tabindex', '-1');
 
-          modalOpen = false;
+          _this.modalOpen = false;
         }
       }); // If you click submit on cookie settings
 
@@ -1707,11 +1723,15 @@ var Interface = /*#__PURE__*/function () {
             _this.elements['modal'].setAttribute('tabindex', '-1');
 
             focusTarget.focus();
-            modalOpen = false;
+            _this.modalOpen = false;
           });
         });
 
         _this.writeBufferToDOM();
+
+        if (window.CookieConsent.config.events.confirm) {
+          window.CookieConsent.config.events.confirm.call(_this, window.CookieConsent.config);
+        }
       });
     }
   }, {
@@ -1785,7 +1805,7 @@ var Interface = /*#__PURE__*/function () {
 
 
 ;// CONCATENATED MODULE: ./src/lib/Configuration.js
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function Configuration_defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function Configuration_typeof(obj) { "@babel/helpers - typeof"; return Configuration_typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, Configuration_typeof(obj); }
 
@@ -1815,6 +1835,7 @@ var Configuration = /*#__PURE__*/function () {
       cookieExists: false,
       cookieVersion: 1,
       modalMainTextMoreLink: null,
+      modalAutoOpen: true,
       showRejectAllButton: false,
       barTimeout: 1000,
       theme: {
@@ -1874,7 +1895,10 @@ var Configuration = /*#__PURE__*/function () {
         }
       },
       categories: {},
-      services: {}
+      services: {},
+      events: {
+        confirm: function confirm() {}
+      }
     };
     this.setConfiguration(configObject);
   }
@@ -1958,10 +1982,10 @@ var Configuration = /*#__PURE__*/function () {
       if (this.isObject(target) && this.isObject(source)) {
         for (var key in source) {
           if (this.isObject(source[key])) {
-            if (!target[key]) Object.assign(target, _defineProperty({}, key, {}));
+            if (!target[key]) Object.assign(target, Configuration_defineProperty({}, key, {}));
             this.mergeDeep(target[key], source[key]);
           } else {
-            Object.assign(target, _defineProperty({}, key, source[key]));
+            Object.assign(target, Configuration_defineProperty({}, key, source[key]));
           }
         }
       }
@@ -2081,6 +2105,7 @@ var CookieConsent = /*#__PURE__*/function () {
       var UI = new Interface();
       UI.buildInterface(function () {
         UI.addEventListeners();
+        UI.autoOpenModal();
       });
     }
   }]);
